@@ -1,42 +1,87 @@
+/* ====== Stil general ====== */
 body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(120deg, #2b5876, #4e4376);
-  color: #fff;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(to bottom right, #f9f9f9, #e8f0fe);
+  color: #222;
   text-align: center;
   margin: 0;
   padding: 0;
 }
 
 .container {
-  max-width: 400px;
-  margin: 60px auto;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  max-width: 650px;
+  margin: 40px auto;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 25px 20px 40px;
 }
 
 h1 {
-  font-size: 1.8em;
+  color: #1976d2;
+  margin-bottom: 15px;
+}
+
+/* ====== Temperatură ====== */
+.temp-box {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 12px;
   margin-bottom: 20px;
 }
 
-.temp-box, .relay-box {
-  margin: 20px 0;
+.temp-box h2 {
+  margin-top: 0;
+  color: #0d47a1;
 }
 
 #temperature {
-  font-size: 2.5em;
+  font-size: 2.4em;
+  font-weight: bold;
+  color: #1976d2;
   margin: 10px 0;
 }
 
-button {
-  font-size: 1em;
-  padding: 10px 20px;
-  margin: 5px;
+#lastUpdate {
+  color: #555;
+  font-size: 0.9em;
+}
+
+/* ====== Mod operare ====== */
+.mode-box {
+  margin-bottom: 20px;
+}
+
+button.mode {
+  background-color: #1976d2;
+  color: white;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 1em;
+  transition: all 0.2s ease;
+}
+
+button.mode:hover {
+  background-color: #0d47a1;
+  transform: scale(1.03);
+}
+
+#modeLabel {
+  color: #1976d2;
+  font-weight: bold;
+}
+
+/* ====== Control releu ====== */
+.relay-box {
+  background: #f1f8e9;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.relay-box h2 {
+  color: #33691e;
 }
 
 button.on {
@@ -49,8 +94,105 @@ button.off {
   color: white;
 }
 
-footer {
-  font-size: 0.8em;
-  opacity: 0.8;
+button.on:hover {
+  background-color: #43a047;
+}
+
+button.off:hover {
+  background-color: #d32f2f;
+}
+
+.state-block {
+  margin-top: 10px;
+  padding: 8px;
+  border-top: 1px solid #ccc;
+  font-size: 0.95em;
+}
+
+.state-block span {
+  font-weight: bold;
+}
+
+/* ====== Setări automate ====== */
+.auto-settings {
+  background: #e8f5e9;
+  padding: 12px;
+  border-radius: 12px;
   margin-top: 20px;
+  border: 1px solid #c8e6c9;
+}
+
+.auto-settings h3 {
+  margin-top: 0;
+  color: #2e7d32;
+}
+
+.auto-settings label {
+  display: block;
+  margin: 6px 0;
+  font-size: 0.95em;
+}
+
+.auto-settings input {
+  width: 80px;
+  padding: 5px;
+  margin-left: 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+}
+
+#saveRangeBtn {
+  background-color: #43a047;
+  color: white;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+#saveRangeBtn:hover {
+  background-color: #2e7d32;
+}
+
+/* ====== Indicator ESP ====== */
+#espStatus {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  background-color: #ccc; /* gri default */
+}
+
+#espStatus.online {
+  background-color: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
+}
+
+#espStatus.offline {
+  background-color: #f44336;
+  box-shadow: 0 0 8px #f44336;
+}
+
+/* ====== Footer ====== */
+footer {
+  margin-top: 25px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+footer strong {
+  color: #1976d2;
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 600px) {
+  .container {
+    padding: 15px;
+  }
+  button {
+    width: 90%;
+    margin: 5px auto;
+    display: block;
+  }
 }

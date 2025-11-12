@@ -14,7 +14,14 @@
     <div class="temp-box">
       <h2>Temperatură actuală</h2>
       <p id="temperature">-- °C</p>
-      <p id="lastUpdate">Ultima actualizare generală: --</p>
+      <p id="lastUpdate">Ultima actualizare: --</p>
+    </div>
+
+    <div class="mode-box">
+      <h2>Mod de operare</h2>
+      <button id="manualBtn" class="mode">Manual</button>
+      <button id="autoBtn" class="mode">Automat</button>
+      <p>Mod curent: <strong><span id="modeLabel">--</span></strong></p>
     </div>
 
     <div class="relay-box">
@@ -31,6 +38,13 @@
         <p><strong>Stare raportată de ESP:</strong> <span id="relayESP">--</span></p>
         <p><small>Ultima actualizare de la ESP: <span id="espTime">--</span></small></p>
       </div>
+    </div>
+
+    <div class="auto-settings">
+      <h3>Setări control automat</h3>
+      <label>Minim: <input type="number" id="minTempInput" value="20" step="0.5"> °C</label>
+      <label>Maxim: <input type="number" id="maxTempInput" value="23" step="0.5"> °C</label>
+      <button id="saveRangeBtn">Salvează interval</button>
     </div>
 
     <footer>

@@ -9,12 +9,15 @@ const PORT = process.env.PORT || 3000;
 
 // Variabile globale
 let latestTemp = 0;
-let relayState = "off";        // stare dorită de utilizator (browser)
+let relayState = "off";        // stare dorită (browser)
 let espRelayState = "off";     // stare raportată de ESP
-let lastEspUpdate = null;      // momentul ultimei actualizări de la ESP
-let lastBrowserUpdate = null;  // momentul ultimei comenzi din browser
+let mode = "manual";           // "manual" sau "auto"
+let minTemp = 20;
+let maxTemp = 23;
+let lastEspUpdate = null;
+let lastBrowserUpdate = null;
 
-// === 1️⃣ ESP32 trimite temperatura și starea sa curentă ===
+// === 1️⃣ ESP trimite temperatura și starea ===
 app.get("/api/update", (req, res) => {
   const { temp, relay } = req.query;
   if (temp) latestTemp = parseFloat(temp);
@@ -26,50 +29,84 @@ app.get("/api/update", (req, res) => {
     temp: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
+    mode,
+    minTemp,
+    maxTemp,
     lastEspUpdate,
     lastBrowserUpdate,
   });
 });
 
-// === 2️⃣ Interfața web citește informațiile curente ===
+// === 2️⃣ Browser citește datele curente ===
 app.get("/api/temp", (req, res) => {
   res.json({
     temp: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
+    mode,
+    minTemp,
+    maxTemp,
     lastEspUpdate,
     lastBrowserUpdate,
   });
 });
 
-// === 3️⃣ Browserul schimbă starea dorită ===
+// === 3️⃣ Browser schimbă starea dorită (mod manual) ===
 app.get("/api/relay", (req, res) => {
   const { state } = req.query;
-  if (state === "on" || state === "off") {
+  if (mode === "manual" && (state === "on" || state === "off")) {
     relayState = state;
     lastBrowserUpdate = new Date().toISOString();
-    console.log(`🖥️ Browser a setat releul: ${relayState} la ${lastBrowserUpdate}`);
+    console.log(`🖥️ Browser manual: releu ${relayState} la ${lastBrowserUpdate}`);
   }
   res.json({ relaySet: relayState, lastBrowserUpdate });
 });
 
-// === 4️⃣ ESP32 citește starea dorită ===
+// === 4️⃣ ESP citește starea dorită / modul curent ===
 app.get("/api/relay-state", (req, res) => {
-  res.setHeader("Content-Type", "text/plain");
-  res.send(relayState);
+  res.json({
+    relaySet: relayState,
+    mode,
+    minTemp,
+    maxTemp,
+  });
 });
 
-// === 5️⃣ Endpoint de status pentru debugging ===
+// === 5️⃣ Browser setează modul (manual / auto) ===
+app.get("/api/mode", (req, res) => {
+  const { value } = req.query;
+  if (value === "manual" || value === "auto") {
+    mode = value;
+    lastBrowserUpdate = new Date().toISOString();
+    console.log(`🖥️ Mod schimbat: ${mode}`);
+  }
+  res.json({ mode, lastBrowserUpdate });
+});
+
+// === 6️⃣ Browser setează intervalul automat ===
+app.get("/api/auto-range", (req, res) => {
+  const { min, max } = req.query;
+  if (!isNaN(min) && !isNaN(max)) {
+    minTemp = parseFloat(min);
+    maxTemp = parseFloat(max);
+    lastBrowserUpdate = new Date().toISOString();
+    console.log(`🌡️ Interval auto setat: ${minTemp}–${maxTemp} °C`);
+  }
+  res.json({ minTemp, maxTemp });
+});
+
+// === 7️⃣ Debug complet ===
 app.get("/api/status", (req, res) => {
   res.json({
     temperature: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
+    mode,
+    minTemp,
+    maxTemp,
     lastEspUpdate,
     lastBrowserUpdate,
   });
 });
 
-app.listen(PORT, () =>
-  console.log(`🌐 Server running on port ${PORT}`)
-);
+app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
