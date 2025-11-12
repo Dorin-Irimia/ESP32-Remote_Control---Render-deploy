@@ -1,0 +1,56 @@
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(120deg, #2b5876, #4e4376);
+  color: #fff;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 400px;
+  margin: 60px auto;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+}
+
+.temp-box, .relay-box {
+  margin: 20px 0;
+}
+
+#temperature {
+  font-size: 2.5em;
+  margin: 10px 0;
+}
+
+button {
+  font-size: 1em;
+  padding: 10px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.on {
+  background-color: #4caf50;
+  color: white;
+}
+
+button.off {
+  background-color: #f44336;
+  color: white;
+}
+
+footer {
+  font-size: 0.8em;
+  opacity: 0.8;
+  margin-top: 20px;
+}

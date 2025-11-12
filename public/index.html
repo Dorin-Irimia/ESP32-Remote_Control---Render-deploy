@@ -2,14 +2,30 @@
 <html lang="ro">
 <head>
   <meta charset="UTF-8" />
-  <title>Remote Temperature Control</title>
-  <script src="script.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP32 Remote Temperature Control</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <h1>Remote Temperature Control</h1>
-  <p>Temperatura actuală: <span id="temp">--</span> °C</p>
-  <button onclick="toggleRelay('on')">Pornește releul</button>
-  <button onclick="toggleRelay('off')">Oprește releul</button>
+  <div class="container">
+    <h1>ESP32 Remote Control</h1>
+
+    <div class="temp-box">
+      <h2>Temperatură actuală</h2>
+      <p id="temperature">-- °C</p>
+    </div>
+
+    <div class="relay-box">
+      <h2>Control Releu</h2>
+      <button id="onBtn" class="on">Pornește</button>
+      <button id="offBtn" class="off">Oprește</button>
+      <p>Stare releu: <span id="relayState">OFF</span></p>
+    </div>
+
+    <footer>
+      <p>Conectat la <strong>https://esp32-remote-control-render-deploy.onrender.com</strong></p>
+    </footer>
+  </div>
 </body>
 </html>
