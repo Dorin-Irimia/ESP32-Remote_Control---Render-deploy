@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: remote-temperature-control
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    autoDeploy: true
+    envVars:
+      - key: ESP_IP
+        value: 100.100.100.50
