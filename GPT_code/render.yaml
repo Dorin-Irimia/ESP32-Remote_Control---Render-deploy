@@ -3,9 +3,9 @@ services:
     name: remote-temperature-control
     env: node
     plan: free
+    rootDir: GPT_code        # <--- indică folderul unde e codul tău
     buildCommand: "npm install"
     startCommand: "npm start"
-    autoDeploy: true
     envVars:
       - key: ESP_IP
         value: 100.100.100.50
