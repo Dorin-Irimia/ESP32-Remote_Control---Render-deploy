@@ -9,23 +9,25 @@ const PORT = process.env.PORT || 3000;
 
 // Variabile globale
 let latestTemp = 0;
-let relayState = "off";           // stare dorită de utilizator (din browser)
-let espRelayState = "off";        // stare raportată de ESP
-let lastUpdate = null;            // momentul ultimei citiri de la ESP
+let relayState = "off";        // stare dorită de utilizator (browser)
+let espRelayState = "off";     // stare raportată de ESP
+let lastEspUpdate = null;      // momentul ultimei actualizări de la ESP
+let lastBrowserUpdate = null;  // momentul ultimei comenzi din browser
 
 // === 1️⃣ ESP32 trimite temperatura și starea sa curentă ===
 app.get("/api/update", (req, res) => {
   const { temp, relay } = req.query;
   if (temp) latestTemp = parseFloat(temp);
   if (relay) espRelayState = relay;
-  lastUpdate = new Date().toISOString();
+  lastEspUpdate = new Date().toISOString();
 
   res.json({
     status: "ok",
     temp: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
-    lastUpdate
+    lastEspUpdate,
+    lastBrowserUpdate,
   });
 });
 
@@ -35,7 +37,8 @@ app.get("/api/temp", (req, res) => {
     temp: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
-    lastUpdate
+    lastEspUpdate,
+    lastBrowserUpdate,
   });
 });
 
@@ -44,13 +47,15 @@ app.get("/api/relay", (req, res) => {
   const { state } = req.query;
   if (state === "on" || state === "off") {
     relayState = state;
-    console.log(`🖥️ Comandă nouă: releu ${relayState}`);
+    lastBrowserUpdate = new Date().toISOString();
+    console.log(`🖥️ Browser a setat releul: ${relayState} la ${lastBrowserUpdate}`);
   }
-  res.json({ relaySet: relayState });
+  res.json({ relaySet: relayState, lastBrowserUpdate });
 });
 
 // === 4️⃣ ESP32 citește starea dorită ===
 app.get("/api/relay-state", (req, res) => {
+  res.setHeader("Content-Type", "text/plain");
   res.send(relayState);
 });
 
@@ -60,7 +65,8 @@ app.get("/api/status", (req, res) => {
     temperature: latestTemp,
     relaySet: relayState,
     relayESP: espRelayState,
-    lastUpdate
+    lastEspUpdate,
+    lastBrowserUpdate,
   });
 });
 

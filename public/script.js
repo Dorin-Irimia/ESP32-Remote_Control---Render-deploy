@@ -1,6 +1,8 @@
 const tempEl = document.getElementById("temperature");
 const relaySetEl = document.getElementById("relaySet");
 const relayESPEl = document.getElementById("relayESP");
+const browserTimeEl = document.getElementById("browserTime");
+const espTimeEl = document.getElementById("espTime");
 const lastUpdateEl = document.getElementById("lastUpdate");
 
 const onBtn = document.getElementById("onBtn");
@@ -13,18 +15,35 @@ async function updateData() {
     const res = await fetch(`${API_BASE}/temp`);
     const data = await res.json();
 
+    // Temperatură
     tempEl.textContent = `${data.temp.toFixed(1)} °C`;
+
+    // Stare din browser
     relaySetEl.textContent = data.relaySet.toUpperCase();
+    relaySetEl.style.color = data.relaySet === "on" ? "#4caf50" : "#f44336";
+
+    // Stare raportată de ESP
     relayESPEl.textContent = data.relayESP.toUpperCase();
-    lastUpdateEl.textContent = data.lastUpdate
-      ? new Date(data.lastUpdate).toLocaleString("ro-RO")
+    relayESPEl.style.color = data.relayESP === "on" ? "#4caf50" : "#f44336";
+
+    // Timpi
+    browserTimeEl.textContent = data.lastBrowserUpdate
+      ? new Date(data.lastBrowserUpdate).toLocaleString("ro-RO")
       : "--";
 
-    // colorăm în funcție de stare
-    relaySetEl.style.color = data.relaySet === "on" ? "#4caf50" : "#f44336";
-    relayESPEl.style.color = data.relayESP === "on" ? "#4caf50" : "#f44336";
+    espTimeEl.textContent = data.lastEspUpdate
+      ? new Date(data.lastEspUpdate).toLocaleString("ro-RO")
+      : "--";
+
+    lastUpdateEl.textContent = data.lastEspUpdate
+      ? "Ultima actualizare generală: " + new Date(data.lastEspUpdate).toLocaleString("ro-RO")
+      : "--";
   } catch (err) {
     tempEl.textContent = "-- °C";
+    relaySetEl.textContent = "--";
+    relayESPEl.textContent = "--";
+    browserTimeEl.textContent = "--";
+    espTimeEl.textContent = "--";
     lastUpdateEl.textContent = "Conexiune pierdută";
   }
 }

@@ -14,7 +14,7 @@
     <div class="temp-box">
       <h2>Temperatură actuală</h2>
       <p id="temperature">-- °C</p>
-      <p id="lastUpdate">Ultima actualizare: --</p>
+      <p id="lastUpdate">Ultima actualizare generală: --</p>
     </div>
 
     <div class="relay-box">
@@ -22,8 +22,15 @@
       <button id="onBtn" class="on">Pornește</button>
       <button id="offBtn" class="off">Oprește</button>
 
-      <p><strong>Stare setată din browser:</strong> <span id="relaySet">--</span></p>
-      <p><strong>Stare raportată de ESP:</strong> <span id="relayESP">--</span></p>
+      <div class="state-block">
+        <p><strong>Stare setată din browser:</strong> <span id="relaySet">--</span></p>
+        <p><small>Ultima modificare din browser: <span id="browserTime">--</span></small></p>
+      </div>
+
+      <div class="state-block">
+        <p><strong>Stare raportată de ESP:</strong> <span id="relayESP">--</span></p>
+        <p><small>Ultima actualizare de la ESP: <span id="espTime">--</span></small></p>
+      </div>
     </div>
 
     <footer>
