@@ -33,3 +33,32 @@ app.get("/api/relay", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+let latestTemp = 0;
+let relayState = "off";
+
+// ESP trimite update cu temperatura și starea curentă
+app.get("/api/update", (req, res) => {
+  const { temp, relay } = req.query;
+  if (temp) latestTemp = parseFloat(temp);
+  if (relay) relayState = relay;
+  res.json({ status: "ok", temp: latestTemp, relay: relayState });
+});
+
+// browserul citește temperatura (API pentru interfață web)
+app.get("/api/temp", (req, res) => {
+  res.json({ temp: latestTemp, relay: relayState });
+});
+
+// browserul sau ESP32 verifică starea releului (pentru sincronizare)
+app.get("/api/relay-state", (req, res) => {
+  res.send(relayState);
+});
+
+// browserul controlează releul
+app.get("/api/relay", (req, res) => {
+  const { state } = req.query;
+  if (state === "on" || state === "off") relayState = state;
+  res.json({ relay: relayState });
+});
