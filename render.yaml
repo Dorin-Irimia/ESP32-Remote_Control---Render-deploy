@@ -3,7 +3,6 @@ services:
     name: remote-temperature-control
     env: node
     plan: free
-    rootDir: GPT_code        # <--- indică folderul unde e codul tău
     buildCommand: "npm install"
     startCommand: "npm start"
     envVars:
