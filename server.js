@@ -7,47 +7,60 @@ app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
 
-// Variabile în memorie (ultimele valori primite de la ESP)
+// Variabile globale
 let latestTemp = 0;
-let relayState = "off";
-let lastUpdate = null; // momentul ultimei actualizări
+let relayState = "off";           // stare dorită de utilizator (din browser)
+let espRelayState = "off";        // stare raportată de ESP
+let lastUpdate = null;            // momentul ultimei citiri de la ESP
 
-// === 1️⃣ ESP32 trimite doar temperatura ===
+// === 1️⃣ ESP32 trimite temperatura și starea sa curentă ===
 app.get("/api/update", (req, res) => {
-  const { temp } = req.query;
-  if (temp) {
-    latestTemp = parseFloat(temp);
-    lastUpdate = new Date().toISOString();
-  }
-  res.json({ status: "ok", temp: latestTemp, relay: relayState });
+  const { temp, relay } = req.query;
+  if (temp) latestTemp = parseFloat(temp);
+  if (relay) espRelayState = relay;
+  lastUpdate = new Date().toISOString();
+
+  res.json({
+    status: "ok",
+    temp: latestTemp,
+    relaySet: relayState,
+    relayESP: espRelayState,
+    lastUpdate
+  });
 });
 
-// === 2️⃣ Interfața web citește temperatura curentă ===
+// === 2️⃣ Interfața web citește informațiile curente ===
 app.get("/api/temp", (req, res) => {
-  res.json({ temp: latestTemp, relay: relayState });
+  res.json({
+    temp: latestTemp,
+    relaySet: relayState,
+    relayESP: espRelayState,
+    lastUpdate
+  });
 });
 
-// === 3️⃣ Browserul controlează releul ===
+// === 3️⃣ Browserul schimbă starea dorită ===
 app.get("/api/relay", (req, res) => {
   const { state } = req.query;
   if (state === "on" || state === "off") {
     relayState = state;
-    console.log(`🖥️ Comandă primită din browser: releu ${relayState}`);
+    console.log(`🖥️ Comandă nouă: releu ${relayState}`);
   }
-  res.json({ relay: relayState });
+  res.json({ relaySet: relayState });
 });
 
-// === 4️⃣ ESP32 verifică starea actuală a releului ===
+// === 4️⃣ ESP32 citește starea dorită ===
 app.get("/api/relay-state", (req, res) => {
   res.send(relayState);
 });
 
-// === 5️⃣ (opțional) Endpoint de status pentru debugging ===
+// === 5️⃣ Endpoint de status pentru debugging ===
 app.get("/api/status", (req, res) => {
   res.json({
     temperature: latestTemp,
-    relay: relayState,
-    lastUpdate,
+    relaySet: relayState,
+    relayESP: espRelayState,
+    lastUpdate
   });
 });
 

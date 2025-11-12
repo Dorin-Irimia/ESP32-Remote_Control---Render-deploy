@@ -14,13 +14,16 @@
     <div class="temp-box">
       <h2>Temperatură actuală</h2>
       <p id="temperature">-- °C</p>
+      <p id="lastUpdate">Ultima actualizare: --</p>
     </div>
 
     <div class="relay-box">
       <h2>Control Releu</h2>
       <button id="onBtn" class="on">Pornește</button>
       <button id="offBtn" class="off">Oprește</button>
-      <p>Stare releu: <span id="relayState">OFF</span></p>
+
+      <p><strong>Stare setată din browser:</strong> <span id="relaySet">--</span></p>
+      <p><strong>Stare raportată de ESP:</strong> <span id="relayESP">--</span></p>
     </div>
 
     <footer>
