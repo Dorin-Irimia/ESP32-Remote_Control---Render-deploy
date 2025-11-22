@@ -1,308 +1,115 @@
 # BrimTech Controller – ESP32 Remote Temperature & Relay Control
 
-## Scopul Proiectului
-Necesitatea care a dus la dezvoltarea acestui proiect este data de nevoia utilizatorului de a putea mentine si controla temperatura intr-o incapere. 
-In momentul in care afara este frig, bateriile sistemelor fotovoltaice sunt puse la grea incercare, datorita temperaturilor scazute. Pentru a pastra bateriile in siguranta si a avea un control eficient al temperaturii, am dezvoltat un sistem de control de la distanta.
-
-## Descrierea Sistemului De Control
-### Componentele Hardware
-Sistemul contine 4 componente hardware:
-- Placa de dezvoltare esp32-vroom.
-- Releu Solid State SSR-40DA.
-- Senzor de temperatura si umiditate DHT11.
-- LED RGB, pentru vizualizarea statusurilor.
-
-### Componentele Software
-- Pentru controlul remote s-a folosit un server si o baza de date gazduite prin: https://dash.cloudflare.com/. Pentru mai multe informatii despre configurarea bazei de date, se poate accesa acest link: https://developers.cloudflare.com/d1/.
-- Pentru a programa placa de dezvoltare ESP32 am folosit IDE-ul de la arduino unde am instalat librariile aferente.
-- Interfata de control se regaseste in browser si poate fi accesata prin acest link: https://brimtech-controller.brimtech.workers.dev/
-
-<img width="586" height="898" alt="image" src="https://github.com/user-attachments/assets/58b9d0ab-37a9-4a2c-971d-986144cf2589" />
-
-## Pasii Pentru Instalarea Sistemului
-
-### 1. Descarca Proiectul in folderul de lucru.
-Asigurate ca ai folderele dupa structura:
-
-- |--> Folder Proiect (folder)
-- .......|--> Public (folder)
-- ..............|--> index.html
-- ..............|--> style.css
-- .......|--> package.json
-- .......|--> worker.js
-- .......|--> wrangler.toml
-- .......|--> esp32_brimtech_controller.ino
-
-
-### 2. Configurare ESP32
-Pentru Conectarea componentelor Hardware am descris mai jos pinii aferenti:
-- Senzorul DHT11 --> PIN 15
-- Releul de Control --> PIN 4
-- LED RGB --> PIN 21, 5, 34
-
-Acesti pini se pot modifica in cazul in care nu sunt disponibili sau se doresc utilizarea altor pini. 
-
-Se deschide IDE-ul Arduino si se introduce codul din fisierul "esp32_brimtech_controller.ino".
-In partea stanga
-
-cod Arduino IDE
-
-//--------------------------------------------------------------
-//  ESP32 – BrimTech Auto Control (Final Version)
-//--------------------------------------------------------------
-
-#include <WiFi.h>
-#include <WiFiClientSecure.h>
-#include <HTTPClient.h>
-#include <DHT.h>
-
-#define DHT_PIN 15
-#define DHT_TYPE DHT11
-
-#define RELAY_PIN 4
-#define LED_ON 21
-#define LED_OFF 5
-#define LED_WIFI 34
-
-DHT dht(DHT_PIN, DHT_TYPE);
-
-const char* ssid = "MERCUSYS_1EDC";
-const char* password = "39689597";
-
-
-//const char* ssid = "Irimia";
-//const char* password = "castravetimurati";
-
-
-//const char* ssid = "TP-Link_F6B8";
-//const char* password = "21580260";
-
-String server = "https://brimtech-controller.brimtech.workers.dev";
-String token  = "BtC_92fA7xP14_QmZ87Lw3vS4nHk";
-
-WiFiClientSecure client;
-
-String relayState = "off";
-float currentTemp = 0.0;
-
-String mode = "manual";
-float minTemp = 5.0;
-float maxTemp = 18.0;
-
-unsigned long lastSend = 0;
-const long intervalMs = 4000;
-
-//-------------------------------------------------------------
-//  RELAY CONTROL
-//-------------------------------------------------------------
-void updateRelay(bool turnOn) {
-  if (turnOn) {
-    digitalWrite(RELAY_PIN, HIGH);
-    digitalWrite(LED_ON, HIGH);
-    digitalWrite(LED_OFF, LOW);
-    relayState = "on";
-//    Serial.println("🔌 Releu PORNIT");
-  } else {
-    digitalWrite(RELAY_PIN, LOW);
-    digitalWrite(LED_ON, LOW);
-    digitalWrite(LED_OFF, HIGH);
-    relayState = "off";
-//    Serial.println("🔌 Releu OPRIT");
-  }
-}
-
-//-------------------------------------------------------------
-//  TEMPERATURE SENSOR
-//-------------------------------------------------------------
-float readTemperature() {
-  float t = dht.readTemperature();
-  delay(300);
-  if (isnan(t) || t < 1 || t > 80) {
-//    Serial.println("❌ EROARE senzor!");
-    return 101;
-  }
-  return t;
-}
-
-//-------------------------------------------------------------
-//  READ MIN/MAX + MODE from server
-//-------------------------------------------------------------
-bool readServerSettings() {
-  HTTPClient https;
-
-  String url = server + "/api/temp?token=" + token;
-
-  https.begin(client, url);
-  int code = https.GET();
-
-  if (code != 200) {
-//    Serial.println("❌ Nu pot citi setările!");
-    https.end();
-    return false;
-  }
-
-  String json = https.getString();
-  https.end();
-
-  // extragere valori
-  mode = json.substring(json.indexOf("\"mode\":\"") + 8,
-                        json.indexOf("\"", json.indexOf("\"mode\":\"") + 8));
-
-  minTemp = json.substring(json.indexOf("\"minTemp\":") + 10,
-                           json.indexOf(",", json.indexOf("\"minTemp\":"))).toFloat();
-
-  maxTemp = json.substring(json.indexOf("\"maxTemp\":") + 10,
-                           json.indexOf(",", json.indexOf("\"maxTemp\":"))).toFloat();
-
-//  Serial.println("📡 Mod server: " + mode);
-//  Serial.printf("📡 Interval AUTO: %.1f - %.1f\n", minTemp, maxTemp);
-
-  return true;
-}
-
-//-------------------------------------------------------------
-//  READ DESIRED RELAY (Manual mode)
-//-------------------------------------------------------------
-String readDesiredRelay() {
-  HTTPClient https;
-  String url = server + "/api/relay-state?token=" + token;
-
-  https.begin(client, url);
-  int code = https.GET();
-
-  if (code != 200) {
-//    Serial.println("❌ Nu pot citi relay-state");
-    https.end();
-    return "off";
-  }
-
-  String state = https.getString();
-  state.trim();
-  https.end();
-
-  return state;  // "on" sau "off"
-}
-
-//-------------------------------------------------------------
-//  AUTO + MANUAL CONTROL
-//-------------------------------------------------------------
-void autoControl() {
-
-  if (mode != "auto") {
-    Serial.println("ℹ Mod manual");
-
-    String desired = readDesiredRelay();
-
-    if (desired == "on" && relayState != "on") {
-      updateRelay(true);
-    }
-    else if (desired == "off" && relayState != "off") {
-      updateRelay(false);
-    }
-
-    return;
-  }
-
-  // === AUTO MODE ===
-  if (currentTemp < minTemp) {
-    if (relayState != "on") updateRelay(true);
-  }
-
-  if (currentTemp > maxTemp) {
-    if (relayState != "off") updateRelay(false);
-  }
-}
-
-//-------------------------------------------------------------
-//  SETUP
-//-------------------------------------------------------------
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(RELAY_PIN, OUTPUT);
-  updateRelay(false);
-
-  pinMode(LED_ON, OUTPUT);
-  pinMode(LED_OFF, OUTPUT);
-  pinMode(LED_WIFI, OUTPUT);
-
-  client.setInsecure();
-
-  Serial.println("Conectare la WiFi...");
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(400);
-    Serial.print(".");
-  }
-
-  Serial.println("\n✔ WiFi conectat!");
-  digitalWrite(LED_WIFI, HIGH);
-
-  dht.begin();
-}
-
-//-------------------------------------------------------------
-//  LOOP
-//-------------------------------------------------------------
-void loop() {
-
-  currentTemp = readTemperature();
-  Serial.printf("🌡 Temp: %.1f\n", currentTemp);
-
-  // === FAILSAFE 40°C ===
-  if (currentTemp >= 40.0) {
-    Serial.println("🔥 FAILSAFE: Temp >= 40°C → Releu OFF!");
-
-    updateRelay(false);
-    relayState = "off";
-
-//    while (readTemperature() >= 39.0) {
-//      Serial.println("🔥 Temperatură mare, mențin releul OFF...");
-//      delay(2000);
-//    }
-
-//    Serial.println("✔ Temperatură revenită sub 39°C");
-  }
-
-  // === WiFi FALLBACK ===
-  if (WiFi.status() != WL_CONNECTED) {
-//    Serial.println("❌ Internet pierdut → Releu OFF + MANUAL");
-    digitalWrite(LED_WIFI, LOW);
-
-    updateRelay(false);
-    relayState = "off";
-    mode = "manual";
-
-    WiFi.reconnect();
-    delay(2000);
-    return;
-  }
-
-  digitalWrite(LED_WIFI, HIGH);
-
-  // === Control AUTO / MANUAL ===
-  autoControl();
-
-  // === SERVER SYNC LA 4 SECUNDE ===
-  if (millis() - lastSend > intervalMs) {
-
-    // update ESP → server
-    HTTPClient https;
-    String url = server +
-      "/api/update?token=" + token +
-      "&temp=" + String(currentTemp) +
-      "&relay=" + relayState;
-
-    https.begin(client, url);
-    https.GET();
-    https.end();
-
-    // setări server → ESP
-    readServerSettings();
-
-    lastSend = millis();
-  }
-
-  delay(200);
-}
+Ghid complet pentru configurarea serverului (Cloudflare Workers + D1), a paginii web, a firmware‑ului ESP32 si a conexiunilor hardware.
+
+## Arhitectura pe scurt
+- Cloudflare Worker (`worker.js`) serveste pagina web din `public/` si API-ul `/api/*`.
+- Baza de date D1 (schema in `init.sql`) pastreaza starea: temperatura, modul, releu setat/raportat, intervale auto si timpii ultimelor actualizari.
+- Pagina web (`public/index.html`, `public/script.js`) trimite comenzi si citeste starea prin API.
+- ESP32 (cod in `esp32_brimtech_controller.ino`) citeste temperatura DHT11, comanda releul, sincronizeaza starea cu serverul la ~4 s si aplica logica auto/manual.
+
+## Cerinte preliminare
+- Cont Cloudflare cu acces la Workers si D1.
+- Node.js + npm (pentru Wrangler CLI si dependente).
+- IDE Arduino (sau Arduino CLI) cu suport pentru placa ESP32.
+- Conexiune Wi-Fi 2.4 GHz pentru ESP32.
+
+## Instalare server + pagina web (Cloudflare Worker)
+1) Instaleaza Wrangler:
+```bash
+npm install -g wrangler
+```
+2) Autentifica-te:
+```bash
+wrangler login
+```
+3) Instaleaza dependente locale (pentru handlerul de asset-uri):
+```bash
+npm install
+```
+4) Creeaza baza de date D1 si leaga-o la proiect:
+```bash
+wrangler d1 create brimtech_controller
+```
+Copieaza `database_id` rezultat si pune-l in `wrangler.toml` la `database_id` (sectiunea `[[d1_databases]]`).
+5) Initializeaza schema in D1:
+```bash
+wrangler d1 execute brimtech_controller --file=init.sql
+```
+6) Seteaza token-ul de acces (string arbitrar, doar tu il stii):
+```bash
+wrangler secret put TOKEN
+# introduce manual token-ul, ex: BtC_<random>
+```
+Actualizeaza acelasi token in `public/script.js` (const `TOKEN`) si in `esp32_brimtech_controller.ino` (variabila `token`).
+7) Ruleaza local in cloud (cu D1 remote):
+```bash
+wrangler dev --remote
+```
+Pagina va fi servita pe URL-ul local oferit de Wrangler; API-ul raspunde pe `/api/*`.
+8) Deploy in productie:
+```bash
+wrangler publish
+```
+URL-ul final este de forma `https://<name>.<subdomeniu>.workers.dev` (definit de `name` din `wrangler.toml`).
+
+## Endpoints API (pentru sincronizare)
+- `GET /api/temp?token=...` – citire status complet (browser/ESP).
+- `GET /api/update?token=...&temp=..&relay=on|off` – trimis de ESP (raporteaza temperatura si starea releului).
+- `GET /api/relay?token=...&state=on|off` – setare manuala din browser.
+- `GET /api/relay-state?token=...` – ESP citeste starea dorita cand este in modul manual.
+- `GET /api/mode?token=...&value=manual|auto` – comutare mod.
+- `GET /api/auto-range?token=...&min=..&max=..` – setare interval auto.
+
+## Configurare pagina web
+- Fisierele din `public/` sunt servite automat de Worker prin configuratia `[assets]` din `wrangler.toml`; nu ai nevoie de hosting separat.
+- Daca modifici `public/script.js`, asigura-te ca `TOKEN` si `API_BASE` sunt corecte:
+  - `TOKEN` trebuie sa fie acelasi cu secretul pus in Wrangler si in firmware.
+  - `API_BASE` gol inseamna aceeasi origine cu Worker-ul; seteaza URL complet doar daca servesti pagina din alt domeniu.
+- Pentru a testa local, ruleaza `wrangler dev --remote` si deschide URL-ul local generat.
+
+## Configurare firmware ESP32 (Arduino IDE)
+1) Instaleaza suportul pentru placa ESP32 in Arduino IDE (Board Manager, URL corespunzatoare Espressif).
+2) Librarii necesare:
+   - `WiFi` (vine cu pachetul ESP32)
+   - `WiFiClientSecure` (inclus in pachetul ESP32)
+   - `HTTPClient` (inclus in pachetul ESP32)
+   - `DHT sensor library` (Adafruit) + `Adafruit Unified Sensor`
+3) Deschide `esp32_brimtech_controller.ino` in Arduino IDE.
+4) Completeaza Wi-Fi SSID/PASS (const `ssid`/`password`), adauga `server` cu URL-ul Worker-ului tau si `token` identic cu cel din Wrangler si pagina web.
+5) Selecteaza placa `ESP32 Dev Module` (sau modelul tau), portul serial, apoi `Upload`.
+
+## Conexiuni hardware (pinii impliciti din cod)
+- DHT11: semnal pe GPIO 15 (`DHT_PIN`).
+- Releu SSR: control pe GPIO 4 (`RELAY_PIN`).
+- LED status:
+  - GPIO 21 (`LED_ON`) – releu ON.
+  - GPIO 5 (`LED_OFF`) – releu OFF.
+  - GPIO 34 (`LED_WIFI`) – Wi-Fi OK.
+Pinii pot fi modificati in sketch prin redefinirea constantelor `DHT_PIN`, `RELAY_PIN`, `LED_ON`, `LED_OFF`, `LED_WIFI`.
+
+## Moduri de functionare si sincronizare
+- **Manual**: Browserul seteaza releul prin `/api/relay`; ESP citeste dorinta la fiecare ciclu prin `/api/relay-state` si aplica starea.
+- **Auto**: ESP citeste intervalul min/max si modul prin `/api/temp`. Daca `temp < min` pornesc releul, daca `temp > max` il opreste.
+- **Failsafe temperaturi**: daca ESP citeste >= 40°C, forteaza releul OFF.
+- **Pierdere Wi-Fi**: ESP stinge LED-ul Wi-Fi, trece in manual si opreste releul pana revine conexiunea.
+- **Frecventa sincronizare**: ~4 s intre update-uri ESP ↔ server.
+
+## Limitari cunoscute
+- Autentificarea se bazeaza doar pe token static stocat in firmware si in frontend; nu exista rotatie automata sau criptare suplimentara (certificatul TLS nu este verificat – `setInsecure()`).
+- O singura intrare in baza de date (`id = 1`); nu exista multi-dispozitiv sau multi-utilizator.
+- Nu exista OTA pentru firmware; modificarile de token sau pinii cer reflash.
+- DHT11 are precizie si stabilitate reduse; pentru valori critice este recomandat un senzor mai precis (ex. DHT22/SHT).
+- Nu sunt incluse teste automate sau monitorizare; worker-ul nu limiteaza rata de acces.
+
+## Checklist rapid de sincronizare
+- Token-ul este acelasi in: `wrangler secret TOKEN`, `public/script.js`, `esp32_brimtech_controller.ino`.
+- `wrangler.toml` foloseste `database_id` corect si numele bazei create.
+- `init.sql` a fost rulat in D1 (exista randul `id=1`).
+- URL-ul `server` din firmware corespunde Worker-ului public.
+
+## Troubleshooting scurt
+- Pagina nu se incarca: verifica `wrangler dev --remote` sau `wrangler publish` si log-urile Worker (`wrangler tail`).
+- API 401 Unauthorized: token diferit intre browser/ESP si Worker.
+- ESP nu se conecteaza: verifica SSID/PASS si alimentarea; GPIO pentru LED Wi-Fi ar trebui sa se aprinda cand conexiunea este stabila.
+- Temperatura nu se actualizeaza: confirma cablarea DHT11 pe GPIO 15 si alimentarea, verifica libraria DHT instalata.
