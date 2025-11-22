@@ -1,18 +1,5 @@
 {
-  "name": "remote-temperature-control",
-  "version": "1.0.0",
-  "description": "Remote temperature control interface for ESP32",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
   "dependencies": {
-    "express": "^4.19.2",
-    "cors": "^2.8.5",
-    "node-fetch": "^3.3.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "@cloudflare/kv-asset-handler": "^0.4.0"
   }
 }

@@ -1,92 +1,102 @@
+const TOKEN = "BtC_92fA7xP14_QmZ87Lw3vS4nHk";
+const API_BASE = ""; // same origin
+
 const tempEl = document.getElementById("temperature");
 const relaySetEl = document.getElementById("relaySet");
-const relayESPEl = document.getElementById("relayESP");
+const relayEspEl = document.getElementById("relayESP");
 const browserTimeEl = document.getElementById("browserTime");
 const espTimeEl = document.getElementById("espTime");
 const lastUpdateEl = document.getElementById("lastUpdate");
+const modeLabel = document.getElementById("modeLabel");
 
 const onBtn = document.getElementById("onBtn");
 const offBtn = document.getElementById("offBtn");
 const manualBtn = document.getElementById("manualBtn");
 const autoBtn = document.getElementById("autoBtn");
-const modeLabel = document.getElementById("modeLabel");
 const minInput = document.getElementById("minTempInput");
 const maxInput = document.getElementById("maxTempInput");
 const saveRangeBtn = document.getElementById("saveRangeBtn");
 
-const API_BASE = "/api";
+function formatTime(ts) {
+  if (!ts) return "--";
+  const n = Number(ts);
+  if (Number.isNaN(n)) return "--";
+  return new Date(n).toLocaleString("ro-RO");
+}
 
-async function updateData() {
+let isUpdating = false;
+
+async function updateData(force = false) {
+  // evităm flood
+  if (isUpdating && !force) return;
+  isUpdating = true;
+
   try {
-    const res = await fetch(`${API_BASE}/temp`);
+    const res = await fetch(`${API_BASE}/api/temp?token=${TOKEN}`);
     const data = await res.json();
 
-    // Temperatură
-    tempEl.textContent = `${data.temp.toFixed(1)} °C`;
+    const temp = parseFloat(data.temp ?? "0");
+    tempEl.textContent = `${temp.toFixed(1)} °C`;
 
-    // Mod operare
-    modeLabel.textContent = data.mode.toUpperCase();
+    modeLabel.textContent = (data.mode ?? "manual").toUpperCase();
 
-    // Releu browser
-    relaySetEl.textContent = data.relaySet.toUpperCase();
+    relaySetEl.textContent = (data.relaySet ?? "off").toUpperCase();
     relaySetEl.style.color = data.relaySet === "on" ? "#4caf50" : "#f44336";
 
-    // Releu ESP
-    relayESPEl.textContent = data.relayESP.toUpperCase();
-    relayESPEl.style.color = data.relayESP === "on" ? "#4caf50" : "#f44336";
+    relayEspEl.textContent = (data.relayESP ?? "off").toUpperCase();
+    relayEspEl.style.color = data.relayESP === "on" ? "#4caf50" : "#f44336";
 
-    // Timp actualizări
-    browserTimeEl.textContent = data.lastBrowserUpdate
-      ? new Date(data.lastBrowserUpdate).toLocaleString("ro-RO")
-      : "--";
+    browserTimeEl.textContent = formatTime(data.lastBrowserUpdate);
+    espTimeEl.textContent = formatTime(data.lastEspUpdate);
+    lastUpdateEl.textContent = "Ultima actualizare ESP: " + formatTime(data.lastEspUpdate);
 
-    espTimeEl.textContent = data.lastEspUpdate
-      ? new Date(data.lastEspUpdate).toLocaleString("ro-RO")
-      : "--";
+    if (data.minTemp) minInput.value = data.minTemp;
+    if (data.maxTemp) maxInput.value = data.maxTemp;
 
-    lastUpdateEl.textContent = data.lastEspUpdate
-      ? "Ultima actualizare: " + new Date(data.lastEspUpdate).toLocaleString("ro-RO")
-      : "--";
+  } catch (e) {
+    console.error(e);
+    lastUpdateEl.textContent = "Eroare la citire date";
+  }
 
-    // Setări automate
-    minInput.value = data.minTemp ?? 20;
-    maxInput.value = data.maxTemp ?? 23;
-  } catch (err) {
-    console.error("❌ Eroare update:", err);
-    tempEl.textContent = "-- °C";
-    lastUpdateEl.textContent = "Conexiune pierdută";
+  isUpdating = false;
+}
+
+async function sendCommand(url) {
+  try {
+    await fetch(url);
+    updateData(true); // 🔥 refresh instant după comenzi
+  } catch (e) {
+    console.error("Command error:", e);
   }
 }
 
-// --- Control manual ---
-async function setRelay(state) {
-  await fetch(`${API_BASE}/relay?state=${state}`);
-  updateData();
-}
+// ---------------- BUTTON ACTIONS ----------------
 
-// --- Comută mod ---
-manualBtn.onclick = async () => {
-  await fetch(`${API_BASE}/mode?value=manual`);
-  updateData();
-};
+onBtn.addEventListener("click", () =>
+  sendCommand(`${API_BASE}/api/relay?token=${TOKEN}&state=on`)
+);
 
-autoBtn.onclick = async () => {
-  await fetch(`${API_BASE}/mode?value=auto`);
-  updateData();
-};
+offBtn.addEventListener("click", () =>
+  sendCommand(`${API_BASE}/api/relay?token=${TOKEN}&state=off`)
+);
 
-// --- Salvare interval automat ---
-saveRangeBtn.onclick = async () => {
+manualBtn.addEventListener("click", () =>
+  sendCommand(`${API_BASE}/api/mode?token=${TOKEN}&value=manual`)
+);
+
+autoBtn.addEventListener("click", () =>
+  sendCommand(`${API_BASE}/api/mode?token=${TOKEN}&value=auto`)
+);
+
+saveRangeBtn.addEventListener("click", () => {
   const min = parseFloat(minInput.value);
   const max = parseFloat(maxInput.value);
-  await fetch(`${API_BASE}/auto-range?min=${min}&max=${max}`);
-  updateData();
-};
+  if (!Number.isNaN(min) && !Number.isNaN(max)) {
+    sendCommand(`${API_BASE}/api/auto-range?token=${TOKEN}&min=${min}&max=${max}`);
+  }
+});
 
-// --- Butoane manual ---
-onBtn.addEventListener("click", () => setRelay("on"));
-offBtn.addEventListener("click", () => setRelay("off"));
+// ---------------- AUTO UPDATE ----------------
 
-// --- Actualizare periodică ---
-setInterval(updateData, 5000);
-updateData();
+setInterval(() => updateData(false), 4000); // 🔥 anti-flood
+updateData(true); // prima încărcare
