@@ -1,4 +1,50 @@
 # BrimTech Controller – ESP32 Remote Temperature & Relay Control
+
+## Scopul Proiectului
+Necesitatea care a dus la dezvoltarea acestui proiect este data de nevoia utilizatorului de a putea mentine si controla temperatura intr-o incapere. 
+In momentul in care afara este frig, bateriile sistemelor fotovoltaice sunt puse la grea incercare, datorita temperaturilor scazute. Pentru a pastra bateriile in siguranta si a avea un control eficient al temperaturii, am dezvoltat un sistem de control de la distanta.
+
+## Descrierea Sistemului De Control
+### Componentele Hardware
+Sistemul contine 4 componente hardware:
+- Placa de dezvoltare esp32-vroom.
+- Releu Solid State SSR-40DA.
+- Senzor de temperatura si umiditate DHT11.
+- LED RGB, pentru vizualizarea statusurilor.
+
+### Componentele Software
+- Pentru controlul remote s-a folosit un server si o baza de date gazduite prin: https://dash.cloudflare.com/. Pentru mai multe informatii despre configurarea bazei de date, se poate accesa acest link: https://developers.cloudflare.com/d1/.
+- Pentru a programa placa de dezvoltare ESP32 am folosit IDE-ul de la arduino unde am instalat librariile aferente.
+- Interfata de control se regaseste in browser si poate fi accesata prin acest link: https://brimtech-controller.brimtech.workers.dev/
+
+<img width="586" height="898" alt="image" src="https://github.com/user-attachments/assets/58b9d0ab-37a9-4a2c-971d-986144cf2589" />
+
+## Pasii Pentru Instalarea Sistemului
+
+### 1. Descarca Proiectul in folderul de lucru.
+Asigurate ca ai folderele dupa structura:
+
+- |--> Folder Proiect (folder)
+- .......|--> Public (folder)
+- ..............|--> index.html
+- ..............|--> style.css
+- .......|--> package.json
+- .......|--> worker.js
+- .......|--> wrangler.toml
+- .......|--> esp32_brimtech_controller.ino
+
+
+### 2. Configurare ESP32
+Pentru Conectarea componentelor Hardware am descris mai jos pinii aferenti:
+- Senzorul DHT11 --> PIN 15
+- Releul de Control --> PIN 4
+- LED RGB --> PIN 21, 5, 34
+
+Acesti pini se pot modifica in cazul in care nu sunt disponibili sau se doresc utilizarea altor pini. 
+
+Se deschide IDE-ul Arduino si se introduce codul din fisierul "esp32_brimtech_controller.ino".
+In partea stanga
+
 cod Arduino IDE
 
 //--------------------------------------------------------------
