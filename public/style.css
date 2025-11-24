@@ -1,6 +1,6 @@
 body {
   font-family: "Segoe UI", Arial, sans-serif;
-  background: linear-gradient(to bottom right, #f9f9f9, #e8f0fe);
+  background: radial-gradient(circle at 20% 20%, #eef4ff 0%, #f9fbff 30%, #eef4ff 60%, #f7f7fb 100%);
   color: #222;
   text-align: center;
   margin: 0;
@@ -8,7 +8,7 @@ body {
 }
 
 .container {
-  max-width: 650px;
+  max-width: 780px;
   margin: 40px auto;
   background: white;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -147,6 +147,58 @@ button.off:hover {
 
 #saveRangeBtn:hover {
   background-color: #2e7d32;
+}
+
+.history-card {
+  background: linear-gradient(135deg, #f7f9fc 0%, #eef3ff 100%);
+  border: 1px solid #d5def7;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 22px;
+  box-shadow: 0 10px 30px rgba(13, 71, 161, 0.06);
+}
+
+.history-card h3 {
+  margin: 0 0 10px;
+  color: #0d47a1;
+}
+
+.range-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.range-btn {
+  background-color: #edf2ff;
+  color: #0b3c91;
+  border: 1px solid #c6d5ff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.range-btn.active {
+  background-color: #0d47a1;
+  color: white;
+  border-color: #0d47a1;
+}
+
+.range-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.history-card canvas {
+  width: 100% !important;
+  max-height: 320px;
+}
+
+.hint {
+  font-size: 0.9em;
+  color: #555;
 }
 
 footer {

@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@cloudflare/kv-asset-handler": "^0.4.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.50.0"
   }
 }

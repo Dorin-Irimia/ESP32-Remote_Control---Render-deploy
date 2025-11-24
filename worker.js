@@ -23,6 +23,7 @@ export default {
     if (path === "/api/relay-state")  return espGetRelay(env);
     if (path === "/api/mode")         return browserSetMode(url, env);
     if (path === "/api/auto-range")   return browserSetAutoRange(url, env);
+    if (path === "/api/history")      return historyData(url, env);
 
     return new Response("Not found", { status: 404 });
   }
@@ -61,6 +62,20 @@ async function saveFromESP(env, temp, relayEsp) {
   ).bind(temp, relayEsp, now).run();
 }
 
+async function saveHistory(env, temp, relayEsp) {
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO history (ts, temp, relay)
+       VALUES (?, ?, ?)`
+  ).bind(now, temp, relayEsp).run();
+
+  // păstrăm doar ultimele 30 de zile ca să nu crească fără limită
+  const retentionMs = 30 * 24 * 60 * 60 * 1000;
+  await env.DB.prepare(
+    `DELETE FROM history WHERE ts < ?`
+  ).bind(now - retentionMs).run();
+}
+
 async function saveRelaySet(env, state) {
   const now = Date.now();
   await env.DB.prepare(
@@ -96,6 +111,7 @@ async function updateFromESP(url, env) {
   const relay = url.searchParams.get("relay") ?? "off";
 
   await saveFromESP(env, temp, relay);
+  await saveHistory(env, temp, relay);
   return json({ status: "ok" });
 }
 
@@ -159,6 +175,31 @@ async function browserSetAutoRange(url, env) {
   await saveRange(env, minTemp, maxTemp);
 
   return json({ minTemp, maxTemp });
+}
+
+// Istoric pentru grafice
+async function historyData(url, env) {
+  const range = url.searchParams.get("range") ?? "24h";
+  const ranges = {
+    "24h": 24 * 60 * 60 * 1000,
+    "7d": 7 * 24 * 60 * 60 * 1000,
+    "30d": 30 * 24 * 60 * 60 * 1000
+  };
+
+  const windowMs = ranges[range] ?? ranges["24h"];
+  const since = Date.now() - windowMs;
+  const limit = 2000;
+
+  const res = await env.DB.prepare(
+    `SELECT ts, temp, relay
+       FROM history
+      WHERE ts >= ?
+      ORDER BY ts ASC
+      LIMIT ?`
+  ).bind(since, limit).all();
+
+  const points = res?.results ?? [];
+  return json({ range: ranges[range] ? range : "24h", points });
 }
 
 // helper JSON

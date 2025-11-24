@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BrimTech – ESP32 Remote Control</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -49,6 +50,17 @@
         <input type="number" id="maxTempInput" value="18" step="0.5"> °C
       </label>
       <button id="saveRangeBtn">Salvează interval</button>
+    </div>
+
+    <div class="history-card">
+      <h3>Grafic temperatură și releu</h3>
+      <div class="range-buttons">
+        <button class="range-btn active" data-range="24h">Ultimele 24h</button>
+        <button class="range-btn" data-range="7d">Ultimele 7 zile</button>
+        <button class="range-btn" data-range="30d">Ultimele 30 zile</button>
+      </div>
+      <canvas id="historyChart" height="260"></canvas>
+      <p id="historyInfo" class="hint">Încărcare date...</p>
     </div>
 
     <footer>

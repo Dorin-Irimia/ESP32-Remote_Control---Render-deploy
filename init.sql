@@ -12,3 +12,12 @@ CREATE TABLE IF NOT EXISTS state (
 
 INSERT OR IGNORE INTO state (id, temp, relay_set, relay_esp, mode, min_temp, max_temp)
 VALUES (1, 0, 'off', 'off', 'manual', 5, 18);
+
+CREATE TABLE IF NOT EXISTS history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  temp REAL,
+  relay TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_history_ts ON history (ts);
